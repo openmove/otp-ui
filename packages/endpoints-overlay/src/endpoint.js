@@ -131,11 +131,11 @@ export default class Endpoint extends Component {
                 >
                   {isHome ? (
                     <span>
-                      <UserLocationIcon type="times" /> Forget home
+                      <UserLocationIcon type="times" /> Dimentica Casa
                     </span>
                   ) : (
                     <span>
-                      <UserLocationIcon type="home" /> Save as home
+                      <UserLocationIcon type="home" /> Salva come Casa
                     </span>
                   )}
                 </Styled.Button>
@@ -147,23 +147,23 @@ export default class Endpoint extends Component {
                 >
                   {isWork ? (
                     <span>
-                      <UserLocationIcon type="times" /> Forget work
+                      <UserLocationIcon type="times" /> Dimentica Lavoro
                     </span>
                   ) : (
                     <span>
-                      <UserLocationIcon type="briefcase" /> Save as work
+                      <UserLocationIcon type="briefcase" /> Salva come Lavoro
                     </span>
                   )}
                 </Styled.Button>
               </div>
               <div>
                 <Styled.Button onClick={this.clearLocation}>
-                  <UserLocationIcon type="times" /> Remove as {type} location
+                  <UserLocationIcon type="times" /> Rimuovi come {type === "to" ? "Destinazione ": "Partenza "}
                 </Styled.Button>
               </div>
               <div>
                 <Styled.Button onClick={this.swapLocation}>
-                  <UserLocationIcon type="refresh" /> Change to {otherType}{" "}
+                  <UserLocationIcon type="refresh" /> Cambia in {otherType === "to" ? "Destinazione": "Partenza"}{" "}
                   location
                 </Styled.Button>
               </div>

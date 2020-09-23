@@ -200,7 +200,7 @@ export default class SettingsSelectorPanel extends Component {
           style={{ margin: "0px -5px", paddingBottom: "8px" }}
         />
 
-        <Styled.SettingsHeader>Travel Preferences</Styled.SettingsHeader>
+        <Styled.SettingsHeader>Preferenze di Viaggio</Styled.SettingsHeader>
 
         {selectedModes.some(isTransit) && transitModes.length >= 2 && (
           <SubmodeSelector
@@ -214,7 +214,7 @@ export default class SettingsSelectorPanel extends Component {
         {/* TODO: Handle different bikeshare networks */}
         {selectedModes.some(isBike) && !selectedModes.some(isTransit) && (
           <SubmodeSelector
-            label="Use"
+            label="Mezzi di trasporto"
             inline
             modes={bikeModes}
             onChange={this.handleMainModeChange}

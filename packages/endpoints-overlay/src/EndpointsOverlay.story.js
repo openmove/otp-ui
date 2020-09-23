@@ -34,11 +34,11 @@ const toLocation = {
 };
 const locations = [fromLocation, toLocation];
 
-function CatDogIcon({ type }) {
-  return type === "from" ? <Cat size={40} color="orange" /> : <Dog size={40} />;
+function MapMarkerIcon({ type }) {
+  return type === "from" ? <Cat size={40} /> : <Dog size={40} />;
 }
 
-CatDogIcon.propTypes = {
+MapMarkerIcon.propTypes = {
   type: PropTypes.string.isRequired
 };
 
@@ -74,25 +74,7 @@ storiesOf("EndpointsOverlay", module)
     <BaseMap center={center} zoom={zoom}>
       <EndpointsOverlay
         fromLocation={fromLocation}
-        MapMarkerIcon={CatDogIcon}
-        setLocation={setLocation}
-        toLocation={toLocation}
-        visible
-      />
-    </BaseMap>
-  ))
-  .add("EndpointsOverlay with intermediate place", () => (
-    <BaseMap center={center} zoom={zoom}>
-      <EndpointsOverlay
-        fromLocation={fromLocation}
-        intermediatePlaces={[
-          {
-            lat: 45.523193,
-            lon: -122.681538,
-            name: "Powell's City of Books",
-            type: "intermediate-place-1"
-          }
-        ]}
+        MapMarkerIcon={MapMarkerIcon}
         setLocation={setLocation}
         toLocation={toLocation}
         visible

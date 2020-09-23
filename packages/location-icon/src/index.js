@@ -3,11 +3,7 @@ import PropTypes from "prop-types";
 
 import * as Styled from "./styled";
 
-/**
- * LocationIcon provides a consistent icon for rendering from, to, or generic
- * place icons in form components like LocationField and in map overlays/popups.
- */
-const LocationIcon = ({ className, size, title, type }) => {
+const LocationIcon = ({ className, size = 10, title, type }) => {
   switch (type) {
     case "from":
       return (
@@ -26,13 +22,7 @@ const LocationIcon = ({ className, size, title, type }) => {
         />
       );
     default:
-      return (
-        <Styled.PlaceIcon
-          className={className}
-          size={size}
-          title={title || "Location Icon"}
-        />
-      );
+      throw new Error("invalid type");
   }
 };
 
@@ -50,16 +40,9 @@ LocationIcon.propTypes = {
    */
   title: PropTypes.string,
   /**
-   * `from` or `to` or some other string value to trigger generic place icon.
+   * Either `from` or `to`
    */
-  type: PropTypes.string
-};
-
-LocationIcon.defaultProps = {
-  className: "",
-  size: 10,
-  title: "",
-  type: ""
+  type: PropTypes.oneOf(["from", "to"]).isRequired
 };
 
 export default LocationIcon;

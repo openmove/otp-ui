@@ -1,21 +1,38 @@
+import { divIcon } from "leaflet";
+import memoize from "lodash.memoize";
 import * as BaseMapStyled from "@opentripplanner/base-map/lib/styled";
 import { getCompaniesLabelFromNetworks } from "@opentripplanner/core-utils/lib/itinerary";
 import {
   companyType,
-  stationType,
-  vehicleRentalMapOverlaySymbolsType
+  vehicleRentalMapOverlaySymbolsType,
+  stationType
 } from "@opentripplanner/core-utils/lib/types";
 import FromToLocationPicker from "@opentripplanner/from-to-location-picker";
-import ZoomBasedMarkers from "@opentripplanner/zoom-based-markers";
 import PropTypes from "prop-types";
 import React from "react";
-import { FeatureGroup, MapLayer, Popup, withLeaflet } from "react-leaflet";
-
+import ReactDOMServer from "react-dom/server";
 import {
-  GenericMarker,
-  HubAndFloatingBike,
-  SharedBikeCircle
-} from "./DefaultMarkers";
+  CircleMarker,
+  FeatureGroup,
+  Marker,
+  MapLayer,
+  Popup,
+  withLeaflet
+} from "react-leaflet";
+
+import { floatingBikeIcon, hubIcons } from "./bike-icons";
+import * as Styled from "./styled";
+
+const getStationMarkerByColor = memoize(color =>
+  divIcon({
+    className: "",
+    iconSize: [11, 16],
+    popupAnchor: [0, -6],
+    html: ReactDOMServer.renderToStaticMarkup(
+      <Styled.StationMarker color={color} />
+    )
+  })
+);
 
 /**
  * This vehicle rental overlay can be used to render vehicle rentals of various
@@ -23,57 +40,6 @@ import {
  * different zoom levels.
  */
 class VehicleRentalOverlay extends MapLayer {
-  /**
-   * This helper method will be passed to the ZoomBasedMarkers symbolTransform prop.
-   * It creates a component that inserts a popup
-   * as a child of the specified symbol from the mapSymbols prop.
-   */
-  renderSymbolWithPopup = Symbol => {
-    const SymbolWrapper = ({ entity: station, zoom }) => (
-      <Symbol entity={station} zoom={zoom}>
-        {this.renderPopupForStation(
-          station,
-          station.bikesAvailable !== undefined && !station.isFloatingBike
-        )}
-      </Symbol>
-    );
-    SymbolWrapper.propTypes = {
-      entity: stationType.isRequired,
-      zoom: PropTypes.number.isRequired
-    };
-
-    return SymbolWrapper;
-  };
-
-  /**
-   * Convert map symbols to zoomBasedSymbolType.
-   */
-  convertToZoomMarkerSymbols = mapSymbols =>
-    mapSymbols.map(mapSymbol => {
-      // If mapSymbol uses zoomBasedSymbolType, use it as is.
-      if (mapSymbol.symbol) {
-        return mapSymbol;
-      }
-
-      // Otherwise, convert into zoomBasedType (no support for symbols by type).
-      let symbol;
-      switch (mapSymbol.type) {
-        case "circle":
-          symbol = SharedBikeCircle(mapSymbol);
-          break;
-        case "hubAndFloatingBike":
-          symbol = HubAndFloatingBike;
-          break;
-        default:
-          symbol = GenericMarker(mapSymbol);
-      }
-
-      return {
-        minZoom: mapSymbol.minZoom,
-        symbol
-      };
-    });
-
   createLeafletElement() {}
 
   updateLeafletElement() {}
@@ -98,8 +64,10 @@ class VehicleRentalOverlay extends MapLayer {
   }
 
   componentDidMount() {
-    const { visible } = this.props;
+    const { companies, mapSymbols, name, visible } = this.props;
     if (visible) this.startRefreshing();
+    if (!mapSymbols)
+      console.warn(`No map symbols provided for layer ${name}`, companies);
   }
 
   componentWillUnmount() {
@@ -142,7 +110,7 @@ class VehicleRentalOverlay extends MapLayer {
 
           {/* Set as from/to toolbar */}
           <BaseMapStyled.PopupRow>
-            <b>Plan a trip:</b>
+            <b>Viaggia:</b>
             <FromToLocationPicker
               location={location}
               setLocation={setLocation}
@@ -153,8 +121,90 @@ class VehicleRentalOverlay extends MapLayer {
     );
   };
 
+  renderStationAsCircle = (station, symbolDef) => {
+    let strokeColor = symbolDef.strokeColor || symbolDef.fillColor;
+    if (!station.isFloatingBike) {
+      strokeColor = symbolDef.dockStrokeColor || strokeColor;
+    }
+    return (
+      <CircleMarker
+        key={station.id}
+        center={[station.y, station.x]}
+        color={strokeColor}
+        fillColor={symbolDef.fillColor}
+        fillOpacity={1}
+        radius={symbolDef.pixels - (station.isFloatingBike ? 1 : 0)}
+        weight={1}
+      >
+        {this.renderPopupForStation(station)}
+      </CircleMarker>
+    );
+  };
+
+  renderStationAsHubAndFloatingBike = station => {
+    let icon;
+    if (station.isFloatingBike) {
+      icon = floatingBikeIcon;
+    } else {
+      const pctFull =
+        station.bikesAvailable /
+        (station.bikesAvailable + station.spacesAvailable);
+      const i = Math.round(pctFull * 9);
+      icon = hubIcons[i];
+    }
+    return (
+      <Marker icon={icon} key={station.id} position={[station.y, station.x]}>
+        {this.renderPopupForStation(station, !station.isFloatingBike)}
+      </Marker>
+    );
+  };
+
+  renderStationAsMarker = (station, symbolDef) => {
+    const color =
+      symbolDef && symbolDef.fillColor ? symbolDef.fillColor : "gray";
+    const markerIcon = getStationMarkerByColor(color);
+
+    return (
+      <Marker
+        icon={markerIcon}
+        key={station.id}
+        position={[station.y, station.x]}
+      >
+        {this.renderPopupForStation(station)}
+      </Marker>
+    );
+  };
+
+  renderStation = station => {
+    // render the station according to any map symbol configuration
+    const { mapSymbols } = this.props;
+
+    // no config set, just render a default marker
+    if (!mapSymbols) return this.renderStationAsMarker(station);
+
+    // get zoom to check which symbol to render
+    const zoom = this.props.leaflet.map.getZoom();
+
+    for (let i = 0; i < mapSymbols.length; i++) {
+      const symbolDef = mapSymbols[i];
+      if (symbolDef.minZoom <= zoom && symbolDef.maxZoom >= zoom) {
+        switch (symbolDef.type) {
+          case "circle":
+            return this.renderStationAsCircle(station, symbolDef);
+          case "hubAndFloatingBike":
+            return this.renderStationAsHubAndFloatingBike(station);
+          default:
+            return this.renderStationAsMarker(station, symbolDef);
+        }
+      }
+    }
+
+    // no matching symbol definition, render default marker
+    return this.renderStationAsMarker(station);
+  };
+
   render() {
-    const { companies, mapSymbols, stations } = this.props;
+    const { stations, companies } = this.props;
     let filteredStations = stations;
     if (companies) {
       filteredStations = stations.filter(
@@ -167,21 +217,8 @@ class VehicleRentalOverlay extends MapLayer {
       return <FeatureGroup />;
     }
 
-    // get zoom to check which symbol to render
-    const zoom = this.props.leaflet.map.getZoom();
-
-    // Convert map symbols for this overlay to zoomBasedSymbolType.
-    const symbols = this.convertToZoomMarkerSymbols(mapSymbols);
-
     return (
-      <FeatureGroup>
-        <ZoomBasedMarkers
-          entities={filteredStations}
-          symbols={symbols}
-          symbolTransform={this.renderSymbolWithPopup}
-          zoom={zoom}
-        />
-      </FeatureGroup>
+      <FeatureGroup>{filteredStations.map(this.renderStation)}</FeatureGroup>
     );
   }
 }
@@ -203,8 +240,8 @@ VehicleRentalOverlay.props = {
    */
   getStationName: PropTypes.func,
   /**
-   * A configuration of what map markers or symbols to show at various
-   * zoom levels.
+   * A configuration of what map markers or symbols to show at various zoom
+   * levels.
    */
   mapSymbols: vehicleRentalMapOverlaySymbolsType,
   /**
@@ -237,7 +274,11 @@ VehicleRentalOverlay.props = {
   /**
    * Whether the overlay is currently visible.
    */
-  visible: PropTypes.bool
+  visible: PropTypes.bool,
+  /**
+   * The current map zoom level.
+   */
+  zoom: PropTypes.number.isRequired
 };
 
 VehicleRentalOverlay.defaultProps = {
@@ -257,12 +298,7 @@ VehicleRentalOverlay.defaultProps = {
     }
     return stationName;
   },
-  mapSymbols: [
-    {
-      zoom: 0,
-      symbol: GenericMarker
-    }
-  ],
+  mapSymbols: null,
   refreshVehicles: null,
   stations: [],
   visible: false

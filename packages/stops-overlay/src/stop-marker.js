@@ -54,13 +54,13 @@ export default class StopMarker extends Component {
                 <b>Stop ID:</b> {idArr[1]}
               </span>
               <Styled.ViewStopButton onClick={this.onClickView}>
-                {languageConfig.stopViewer || "Stop Viewer"}
+                {languageConfig.stopViewer || "Vedi Stop"}
               </Styled.ViewStopButton>
             </BaseMapStyled.PopupRow>
 
             {/* The "Set as [from/to]" ButtonGroup */}
             <BaseMapStyled.PopupRow>
-              <b>Plan a trip:</b>
+              <b>Viaggia:</b>
               <FromToLocationPicker
                 onFromClick={this.onFromClick}
                 onToClick={this.onToClick}

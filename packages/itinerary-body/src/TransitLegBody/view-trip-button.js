@@ -12,7 +12,7 @@ class ViewTripButton extends Component {
   render() {
     return (
       <Styled.ViewerButton onClick={this.onClick} type="button">
-        Trip Viewer
+        Vedi Corsa
       </Styled.ViewerButton>
     );
   }

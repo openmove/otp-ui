@@ -131,10 +131,10 @@ function getPrimaryModeOption(ModeIcon, selectedModes) {
     text: (
       <span>
         <ModeIcon mode="TRANSIT" />
-        Take Transit
+        Trasporto Pubblico
       </span>
     ),
-    title: "Take Transit"
+    title: "Trasporto Pubblico"
   };
 }
 

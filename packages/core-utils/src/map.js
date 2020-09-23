@@ -174,6 +174,7 @@ export function itineraryToTransitive(itin, companies) {
       streetEdgeId++;
     }
     if (isTransit(leg.mode)) {
+        console.log("------>" , leg);
       // determine if we have valid inter-stop geometry
       const hasInterStopGeometry = !!leg.interStopGeometry;
       const hasIntermediateStopGeometry =

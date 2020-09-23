@@ -14,7 +14,7 @@ export default function TransitLegSubheader({
   onStopClick
 }) {
   const { from } = leg;
-  const buttonText = languageConfig.stopViewer || "Stop Viewer";
+  const buttonText = languageConfig.stopViewer || "Vedi Fermata";
   return (
     <Styled.PlaceSubheader>
       <span>Stop ID {from.stopId.split(":")[1]}</span>
